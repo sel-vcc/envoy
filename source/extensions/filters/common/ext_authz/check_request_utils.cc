@@ -68,6 +68,15 @@ void CheckRequestUtils::setAttrContextPeer(envoy::service::auth::v2::AttributeCo
     }
   }
 
+  if (ssl != nullptr && !local) {
+    // Set the peer's cert as a label in the source attributes.
+    const auto peerCertificate = ssl->urlEncodedPemEncodedPeerCertificate();
+    if (!peerCertificate.empty()) {
+      auto& labels = *peer.mutable_labels();
+      labels["peer-certificate"] = peerCertificate;
+    }
+  }
+
   if (!service.empty()) {
     peer.set_service(service);
   }
