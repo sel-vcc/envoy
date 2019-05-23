@@ -27,6 +27,14 @@ static_resources:
                 route:
                   cluster: service2
           http_filters:
+          - name: envoy.ext_authz
+            config:
+              http_service:
+                  server_uri:
+                    uri: authz:8080
+                    cluster: ext-authz
+                    timeout: 0.25s
+              failure_mode_allow: false
           - name: envoy.router
             typed_config: {}
   clusters:
@@ -58,6 +66,19 @@ static_resources:
               socket_address:
                 address: service2
                 port_value: 80
+  - name: ext-authz
+    connect_timeout: 0.25s
+    type: strict_dns
+    lb_policy: round_robin
+    load_assignment:
+      cluster_name: ext-authz
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: authz
+                port_value: 8080
 admin:
   access_log_path: "/dev/null"
   address:

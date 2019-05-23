@@ -1,6 +1,5 @@
 version: "3.7"
 services:
-
   front-envoy:
     build:
       context: .
@@ -15,6 +14,19 @@ services:
     ports:
       - "8000:80"
       - "8001:8001"
+
+  authz:
+    build:
+      context: .
+      dockerfile: Dockerfile-auth
+    networks:
+      envoymesh:
+        aliases:
+          - authz
+    expose:
+      - "8080"
+    ports:
+      - "8080:8080"
 
   service1:
     build:
