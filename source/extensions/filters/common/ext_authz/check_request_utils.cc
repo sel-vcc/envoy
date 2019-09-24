@@ -38,7 +38,7 @@ void CheckRequestUtils::setAttrContextPeer(envoy::service::auth::v2::AttributeCo
   }
 
   // Set the principal. Preferably the URI SAN, DNS SAN or Subject in that order from the peer's
-  // cert.
+  // cert. For the downstream (non-local) peer, set the SSL certificate, if present, as a label.
   auto ssl = connection.ssl();
   if (ssl != nullptr) {
     if (local) {
@@ -65,15 +65,11 @@ void CheckRequestUtils::setAttrContextPeer(envoy::service::auth::v2::AttributeCo
       } else {
         peer.set_principal(uri_sans[0]);
       }
-    }
-  }
-
-  if (ssl != nullptr && !local) {
-    // Set the peer's cert as a label in the source attributes.
-    const auto peerCertificate = ssl->urlEncodedPemEncodedPeerCertificate();
-    if (!peerCertificate.empty()) {
-      auto& labels = *peer.mutable_labels();
-      labels["peer-certificate"] = peerCertificate;
+      const auto peerCertificate = ssl->urlEncodedPemEncodedPeerCertificate();
+      if (!peerCertificate.empty()) {
+        auto& labels = *peer.mutable_labels();
+        labels["peer-certificate"] = peerCertificate;
+      }
     }
   }
 
