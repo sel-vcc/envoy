@@ -40,6 +40,7 @@ public:
     EXPECT_CALL(callbacks_, decodingBuffer()).WillOnce(Return(buffer_.get()));
     EXPECT_CALL(callbacks_, streamInfo()).Times(3).WillRepeatedly(ReturnRef(req_info_));
     EXPECT_CALL(req_info_, protocol()).Times(2).WillRepeatedly(ReturnPointee(&protocol_));
+    EXPECT_CALL(*ssl_, urlEncodedPemEncodedPeerCertificate()).WillOnce(ReturnRef("cert-data"));
   }
 
   void callHttpCheckAndValidateRequestAttributes() {
@@ -67,6 +68,7 @@ public:
                          .fields()
                          .at("foo")
                          .string_value());
+    EXPECT_EQ("cert-data", request.attributes().source().labels().at("peer-certificate"));
   }
 
   static Buffer::InstancePtr newTestBuffer(uint64_t size) {
@@ -97,6 +99,7 @@ TEST_F(CheckRequestUtilsTest, BasicTcp) {
   EXPECT_CALL(connection_, remoteAddress()).WillOnce(ReturnRef(addr_));
   EXPECT_CALL(connection_, localAddress()).WillOnce(ReturnRef(addr_));
   EXPECT_CALL(Const(connection_), ssl()).Times(2).WillRepeatedly(Return(ssl_));
+  EXPECT_CALL(*ssl_, urlEncodedPemEncodedPeerCertificate()).WillOnce(ReturnRef("cert-data"));
 
   CheckRequestUtils::createTcpCheck(&net_callbacks_, request);
 }
@@ -172,6 +175,7 @@ TEST_F(CheckRequestUtilsTest, CheckAttrContextPeer) {
   EXPECT_CALL(*ssl_, uriSanPeerCertificate()).WillOnce(Return(std::vector<std::string>{"source"}));
   EXPECT_CALL(*ssl_, uriSanLocalCertificate())
       .WillOnce(Return(std::vector<std::string>{"destination"}));
+  EXPECT_CALL(*ssl_, urlEncodedPemEncodedPeerCertificate()).WillOnce(ReturnRef("cert-data"));
 
   callHttpCheckAndValidateRequestAttributes();
 }
