@@ -68,6 +68,7 @@ public:
         scope_(scope), runtime_(runtime), http_context_(http_context), pool_(scope.symbolTable()),
         metadata_context_namespaces_(config.metadata_context_namespaces().begin(),
                                      config.metadata_context_namespaces().end()),
+        peer_labels_(config.peer_labels().begin(), config.peer_labels().end()),
         stats_(generateStats(stats_prefix, scope)), ext_authz_ok_(pool_.add("ext_authz.ok")),
         ext_authz_denied_(pool_.add("ext_authz.denied")),
         ext_authz_error_(pool_.add("ext_authz.error")),
@@ -103,6 +104,8 @@ public:
     scope.counterFromStatName(name).inc();
   }
 
+  const std::set<std::string>& peerLabels() { return peer_labels_; }
+
 private:
   static Http::Code toErrorCode(uint64_t status) {
     const auto code = static_cast<Http::Code>(status);
@@ -133,6 +136,8 @@ private:
 
   // The stats for the filter.
   ExtAuthzFilterStats stats_;
+
+  const std::set<std::string> peer_labels_;
 
 public:
   // TODO(nezdolik): deprecate cluster scope stats counters in favor of filter scope stats
