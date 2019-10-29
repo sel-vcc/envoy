@@ -49,6 +49,7 @@ public:
         scope_(scope), runtime_(runtime), http_context_(http_context), pool_(scope.symbolTable()),
         metadata_context_namespaces_(config.metadata_context_namespaces().begin(),
                                      config.metadata_context_namespaces().end()),
+        peer_labels_(config.peer_labels().begin(), config.peer_labels().end()),
         ext_authz_ok_(pool_.add("ext_authz.ok")), ext_authz_denied_(pool_.add("ext_authz.denied")),
         ext_authz_error_(pool_.add("ext_authz.error")),
         ext_authz_failure_mode_allowed_(pool_.add("ext_authz.failure_mode_allowed")) {}
@@ -81,6 +82,8 @@ public:
     return metadata_context_namespaces_;
   }
 
+  const std::set<std::string>& peerLabels() { return peer_labels_; }
+
 private:
   static Http::Code toErrorCode(uint64_t status) {
     const auto code = static_cast<Http::Code>(status);
@@ -103,6 +106,8 @@ private:
   Stats::StatNamePool pool_;
 
   const std::vector<std::string> metadata_context_namespaces_;
+
+  const std::set<std::string> peer_labels_;
 
 public:
   const Stats::StatName ext_authz_ok_;

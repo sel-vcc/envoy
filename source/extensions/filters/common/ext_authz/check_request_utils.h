@@ -44,27 +44,30 @@ public:
    *        check request.
    * @param request is the reference to the check request that will be filled up.
    * @param with_request_body when true, will add the request body to the check request.
+   * @param peer_labels the peer attribute labels to provide to the external service.
    */
   static void createHttpCheck(const Envoy::Http::StreamDecoderFilterCallbacks* callbacks,
                               const Envoy::Http::HeaderMap& headers,
                               Protobuf::Map<std::string, std::string>&& context_extensions,
                               envoy::api::v2::core::Metadata&& metadata_context,
                               envoy::service::auth::v2::CheckRequest& request,
-                              uint64_t max_request_bytes);
+                              uint64_t max_request_bytes, const std::set<std::string>& peer_labels);
 
   /**
    * createTcpCheck is used to extract the attributes from the network layer and fill them up
    * in the CheckRequest proto message.
    * @param callbacks supplies the network layer context from which data can be extracted.
    * @param request is the reference to the check request that will be filled up.
+   * @param peer_labels the peer attribute labels to provide to the external service.
    */
   static void createTcpCheck(const Network::ReadFilterCallbacks* callbacks,
-                             envoy::service::auth::v2::CheckRequest& request);
+                             envoy::service::auth::v2::CheckRequest& request,
+                             const std::set<std::string>& peer_labels);
 
 private:
   static void setAttrContextPeer(envoy::service::auth::v2::AttributeContext_Peer& peer,
                                  const Network::Connection& connection, const std::string& service,
-                                 const bool local);
+                                 const bool local, const std::set<std::string>& peer_labels);
   static void setHttpRequest(::envoy::service::auth::v2::AttributeContext_HttpRequest& httpreq,
                              const Envoy::Http::StreamDecoderFilterCallbacks* callbacks,
                              const Envoy::Http::HeaderMap& headers, uint64_t max_request_bytes);

@@ -25,9 +25,16 @@ namespace Filters {
 namespace Common {
 namespace ExtAuthz {
 
+struct AttrContextPeerLabelValues {
+  // The peer certificate, in URL and PEM-encoded form.
+  const std::string PeerCertificate = "peer-certificate";
+};
+using AttrContextPeerLabels = ConstSingleton<AttrContextPeerLabelValues>;
+
 void CheckRequestUtils::setAttrContextPeer(envoy::service::auth::v2::AttributeContext_Peer& peer,
                                            const Network::Connection& connection,
-                                           const std::string& service, const bool local) {
+                                           const std::string& service, const bool local,
+                                           const std::set<std::string>& peer_labels) {
 
   // Set the address
   auto addr = peer.mutable_address();
@@ -65,10 +72,12 @@ void CheckRequestUtils::setAttrContextPeer(envoy::service::auth::v2::AttributeCo
       } else {
         peer.set_principal(uri_sans[0]);
       }
+      const auto sendPeerCertificate =
+          peer_labels.find(AttrContextPeerLabels::get().PeerCertificate) != peer_labels.end();
       const auto peerCertificate = ssl->urlEncodedPemEncodedPeerCertificate();
-      if (!peerCertificate.empty()) {
+      if (sendPeerCertificate && !peerCertificate.empty()) {
         auto& labels = *peer.mutable_labels();
-        labels["peer-certificate"] = peerCertificate;
+        labels[AttrContextPeerLabels::get().PeerCertificate] = peerCertificate;
       }
     }
   }
@@ -158,7 +167,8 @@ void CheckRequestUtils::createHttpCheck(
     const Envoy::Http::HeaderMap& headers,
     Protobuf::Map<std::string, std::string>&& context_extensions,
     envoy::api::v2::core::Metadata&& metadata_context,
-    envoy::service::auth::v2::CheckRequest& request, uint64_t max_request_bytes) {
+    envoy::service::auth::v2::CheckRequest& request, uint64_t max_request_bytes,
+    const std::set<std::string>& peer_labels) {
 
   auto attrs = request.mutable_attributes();
 
@@ -167,8 +177,8 @@ void CheckRequestUtils::createHttpCheck(
 
   const std::string service = getHeaderStr(headers.EnvoyDownstreamServiceCluster());
 
-  setAttrContextPeer(*attrs->mutable_source(), *cb->connection(), service, false);
-  setAttrContextPeer(*attrs->mutable_destination(), *cb->connection(), "", true);
+  setAttrContextPeer(*attrs->mutable_source(), *cb->connection(), service, false, peer_labels);
+  setAttrContextPeer(*attrs->mutable_destination(), *cb->connection(), "", true, peer_labels);
   setAttrContextRequest(*attrs->mutable_request(), callbacks, headers, max_request_bytes);
 
   // Fill in the context extensions:
@@ -177,13 +187,14 @@ void CheckRequestUtils::createHttpCheck(
 }
 
 void CheckRequestUtils::createTcpCheck(const Network::ReadFilterCallbacks* callbacks,
-                                       envoy::service::auth::v2::CheckRequest& request) {
+                                       envoy::service::auth::v2::CheckRequest& request,
+                                       const std::set<std::string>& peer_labels) {
 
   auto attrs = request.mutable_attributes();
 
   Network::ReadFilterCallbacks* cb = const_cast<Network::ReadFilterCallbacks*>(callbacks);
-  setAttrContextPeer(*attrs->mutable_source(), cb->connection(), "", false);
-  setAttrContextPeer(*attrs->mutable_destination(), cb->connection(), "", true);
+  setAttrContextPeer(*attrs->mutable_source(), cb->connection(), "", false, peer_labels);
+  setAttrContextPeer(*attrs->mutable_destination(), cb->connection(), "", true, peer_labels);
 }
 
 } // namespace ExtAuthz
