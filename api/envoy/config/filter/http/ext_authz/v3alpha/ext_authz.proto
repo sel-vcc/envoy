@@ -82,6 +82,10 @@ message ExtAuthz {
   //    - envoy.filters.http.jwt_authn
   //
   repeated string metadata_context_namespaces = 8;
+
+  // The labels to provide to the external service in the
+  // :ref:`AttributeContext.Peer.labels<envoy_api_field_service.auth.v3alpha.AttributeContext.Peer.labels>`.
+  repeated string peer_labels = 9;
 }
 
 // Configuration for buffering the request data.

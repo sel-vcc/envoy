@@ -31,4 +31,8 @@ message ExtAuthz {
   // communication failure between authorization service and the proxy.
   // Defaults to false.
   bool failure_mode_allow = 3;
+
+  // The labels to provide to the external service in the
+  // :ref:`AttributeContext.Peer.labels<envoy_api_field_service.auth.v2.AttributeContext.Peer.labels>`.
+  repeated string peer_labels = 4;
 }
